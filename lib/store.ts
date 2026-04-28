@@ -369,7 +369,7 @@ export const useStore = create<AppState>()((set, get) => ({
     await supabase.from("bets").update({ option_id: newOptionId, amount: newAmount }).eq("id", existingBet.id);
 
     // Update option totalBets
-    const updates: Promise<any>[] = [];
+    const updates: any[] = [];
     if (existingBet.optionId !== newOptionId) {
       const oldOption = event.options.find((o) => o.id === existingBet.optionId);
       const newOption = event.options.find((o) => o.id === newOptionId);
