@@ -2,7 +2,7 @@
 
 import { create } from "zustand";
 import { supabase } from "./supabase";
-import { Bet, BetEvent, User } from "./types";
+import { Bet, BetEvent, Comment, User } from "./types";
 import { calculatePayout } from "./utils";
 
 // ── Mappers Supabase (snake_case) → TypeScript (camelCase) ──
@@ -65,6 +65,7 @@ interface AppState {
   users: User[];
   events: BetEvent[];
   bets: Bet[];
+  comments: Comment[];
   hydrated: boolean;
 
   hydrate: () => Promise<void>;
@@ -77,6 +78,8 @@ interface AppState {
   lockEvent: (eventId: string) => Promise<void>;
   placeBet: (eventId: string, optionId: string, amount: number) => Promise<{ success: boolean; error?: string }>;
   changeBet: (eventId: string, newOptionId: string, newAmount: number) => Promise<{ success: boolean; error?: string }>;
+  addComment: (eventId: string, content: string, parentId?: string) => void;
+  likeComment: (commentId: string) => void;
 }
 
 export const useStore = create<AppState>()((set, get) => ({
@@ -84,6 +87,7 @@ export const useStore = create<AppState>()((set, get) => ({
   users: [],
   events: [],
   bets: [],
+  comments: [],
   hydrated: false,
 
   // ── Chargement initial depuis Supabase ──
@@ -407,5 +411,38 @@ export const useStore = create<AppState>()((set, get) => ({
     }));
 
     return { success: true };
+  },
+
+  // ── Commentaires (en mémoire) ──
+  addComment: (eventId, content, parentId) => {
+    const { currentUser } = get();
+    if (!currentUser) return;
+    const newComment: Comment = {
+      id: `comment-${Date.now()}`,
+      eventId,
+      userId: currentUser.id,
+      content,
+      createdAt: new Date().toISOString(),
+      likes: [],
+      parentId,
+    };
+    set((s) => ({ comments: [...s.comments, newComment] }));
+  },
+
+  likeComment: (commentId) => {
+    const { currentUser } = get();
+    if (!currentUser) return;
+    set((s) => ({
+      comments: s.comments.map((c) => {
+        if (c.id !== commentId) return c;
+        const hasLiked = c.likes.includes(currentUser.id);
+        return {
+          ...c,
+          likes: hasLiked
+            ? c.likes.filter((id) => id !== currentUser.id)
+            : [...c.likes, currentUser.id],
+        };
+      }),
+    }));
   },
 }));
