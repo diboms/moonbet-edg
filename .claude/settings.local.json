@@ -5,7 +5,12 @@
       "WebFetch(domain:www.europeandigital-group.com)",
       "Bash(npx tsc *)",
       "WebFetch(domain:www.linkedin.com)",
-      "Bash(not exist *)"
+      "Bash(not exist *)",
+      "Bash(git add *)",
+      "Bash(git commit *)",
+      "Bash(git push *)",
+      "Bash(del components\\\\theme-provider.tsx)",
+      "Bash(git rm *)"
     ]
   }
 }

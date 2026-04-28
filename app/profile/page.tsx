@@ -16,7 +16,7 @@ import { Label } from "@/components/ui/label";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { CompanySelect } from "@/components/ui/company-select";
 
 export default function ProfilePage() {
   const router = useRouter();
@@ -209,14 +209,7 @@ export default function ProfilePage() {
               <Label>
                 <Building2 className="h-3.5 w-3.5 inline mr-1.5 text-zinc-600" />Société
               </Label>
-              <Select value={company} onValueChange={(v) => setCompany(v as Company)}>
-                <SelectTrigger><SelectValue /></SelectTrigger>
-                <SelectContent>
-                  {COMPANIES.map((c) => (
-                    <SelectItem key={c} value={c}>{c}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+              <CompanySelect value={company} onValueChange={(v) => setCompany(v)} />
             </div>
           </CardContent>
         </Card>
