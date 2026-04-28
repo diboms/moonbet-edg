@@ -41,8 +41,8 @@ export function calculateOdds(option: EventOption, totalPot: number): string {
 }
 
 export function calculatePayout(betAmount: number, optionTotalBets: number, totalPot: number): number {
-  if (optionTotalBets === 0) return 0;
-  return (betAmount / optionTotalBets) * totalPot;
+  // Système x2 fixe : chaque gagnant reçoit le double de sa mise
+  return betAmount * 2;
 }
 
 export function getUserBetOnEvent(bets: Bet[], userId: string, eventId: string): Bet | undefined {

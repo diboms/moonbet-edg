@@ -36,13 +36,7 @@ export function BetSlider({ event, existingBet, onSuccess }: BetSliderProps) {
   const maxBet = Math.min(availableBalance, 1000);
   const minBet = 10;
 
-  const simulatedTotalPot = event.totalPot + amount;
-  const simulatedOptionBets = selectedOption
-    ? (event.options.find((o) => o.id === selectedOption.id)?.totalBets ?? 0) + amount
-    : 0;
-  const estimatedPayout = selectedOption
-    ? calculatePayout(amount, simulatedOptionBets, simulatedTotalPot)
-    : 0;
+  const estimatedPayout = selectedOption ? amount * 2 : 0;
 
   const hasChanged = isEditing &&
     (selectedOption?.id !== existingBet?.optionId || amount !== existingBet?.amount);
@@ -83,7 +77,6 @@ export function BetSlider({ event, existingBet, onSuccess }: BetSliderProps) {
         <div className="grid gap-2">
           {event.options.map((opt) => {
             const pct = event.totalPot > 0 ? (opt.totalBets / event.totalPot) * 100 : 0;
-            const odds = event.totalPot > 0 ? event.totalPot / (opt.totalBets || 1) : 0;
             const isSelected = selectedOption?.id === opt.id;
 
             return (
@@ -104,16 +97,14 @@ export function BetSlider({ event, existingBet, onSuccess }: BetSliderProps) {
                   <span className={cn("text-sm font-bold", isSelected ? "text-edg-300" : "text-zinc-200")}>
                     {isSelected && "✓ "}{opt.label}
                   </span>
-                  {event.totalPot > 0 && (
-                    <span className={cn(
-                      "text-xs font-black rounded-full px-2.5 py-0.5 border",
-                      isSelected
-                        ? "bg-edg-500/20 text-edg-300 border-edg-500/30"
-                        : "bg-dark-600 text-zinc-500 border-dark-500"
-                    )}>
-                      x{odds.toFixed(2)}
-                    </span>
-                  )}
+                  <span className={cn(
+                    "text-xs font-black rounded-full px-2.5 py-0.5 border",
+                    isSelected
+                      ? "bg-edg-500/20 text-edg-300 border-edg-500/30"
+                      : "bg-dark-600 text-zinc-500 border-dark-500"
+                  )}>
+                    x2
+                  </span>
                 </div>
                 <div className="flex items-center gap-2">
                   <div className="flex-1 h-1.5 rounded-full bg-dark-600 overflow-hidden">
