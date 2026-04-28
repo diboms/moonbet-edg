@@ -1,0 +1,156 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --background: 7 7 10;
+    --foreground: 250 250 250;
+  }
+
+  * {
+    @apply border-dark-600;
+  }
+
+  body {
+    @apply bg-dark-900 text-zinc-100 antialiased;
+    font-feature-settings: "rlig" 1, "calt" 1;
+    /* EDG halftone pattern subtil en fond */
+    background-image:
+      radial-gradient(circle, rgba(124,58,237,0.04) 1px, transparent 1px);
+    background-size: 24px 24px;
+  }
+
+  /* Custom scrollbar — EDG style */
+  ::-webkit-scrollbar { width: 5px; height: 5px; }
+  ::-webkit-scrollbar-track { background: #07070a; }
+  ::-webkit-scrollbar-thumb { background: #7c3aed40; border-radius: 9999px; }
+  ::-webkit-scrollbar-thumb:hover { background: #7c3aed80; }
+}
+
+@layer utilities {
+  .pb-safe {
+    padding-bottom: max(0.5rem, env(safe-area-inset-bottom));
+  }
+
+  /* EDG gradient text */
+  .text-edg-gradient {
+    background: linear-gradient(135deg, #a78bfa 0%, #38bdf8 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+
+  /* Moon gold text */
+  .text-gradient {
+    background: linear-gradient(135deg, #fbbf24, #f59e0b);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+
+  /* EDG rainbow text */
+  .text-rainbow {
+    background: linear-gradient(135deg, #ec4899 0%, #a78bfa 40%, #38bdf8 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+
+  /* EDG glow violet */
+  .glow-edg {
+    box-shadow:
+      0 0 20px rgba(124, 58, 237, 0.25),
+      0 0 60px rgba(124, 58, 237, 0.08);
+  }
+
+  /* Moon gold glow */
+  .glow-moon {
+    box-shadow:
+      0 0 20px rgba(251, 191, 36, 0.20),
+      0 0 60px rgba(245, 158, 11, 0.06);
+  }
+
+  /* EDG halftone pattern overlay */
+  .halftone {
+    background-image: radial-gradient(circle, rgba(255,255,255,0.06) 1px, transparent 1px);
+    background-size: 16px 16px;
+  }
+
+  /* Geometric grid pattern */
+  .grid-pattern {
+    background-image:
+      linear-gradient(rgba(124,58,237,0.05) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(124,58,237,0.05) 1px, transparent 1px);
+    background-size: 40px 40px;
+  }
+
+  /* EDG card avec bordure gradient */
+  .card-edg-border {
+    position: relative;
+    border-radius: 1rem;
+    background: linear-gradient(#0f0f14, #0f0f14) padding-box,
+                linear-gradient(135deg, rgba(124,58,237,0.4), rgba(14,165,233,0.2)) border-box;
+    border: 1px solid transparent;
+  }
+
+  .tabular-nums {
+    font-variant-numeric: tabular-nums;
+  }
+}
+
+/* Animations */
+@keyframes float {
+  0%, 100% { transform: translateY(0px) rotate(0deg); }
+  50% { transform: translateY(-8px) rotate(2deg); }
+}
+
+@keyframes float-slow {
+  0%, 100% { transform: translateY(0px); }
+  50% { transform: translateY(-12px); }
+}
+
+@keyframes shimmer {
+  0% { background-position: -200% 0; }
+  100% { background-position: 200% 0; }
+}
+
+@keyframes spin-slow {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+@keyframes pulse-glow {
+  0%, 100% { box-shadow: 0 0 15px rgba(124,58,237,0.3); }
+  50% { box-shadow: 0 0 30px rgba(124,58,237,0.6), 0 0 60px rgba(14,165,233,0.2); }
+}
+
+.animate-float { animation: float 3s ease-in-out infinite; }
+.animate-float-slow { animation: float-slow 5s ease-in-out infinite; }
+.animate-spin-slow { animation: spin-slow 8s linear infinite; }
+.animate-pulse-glow { animation: pulse-glow 2s ease-in-out infinite; }
+
+/* Radix UI animations */
+.animate-in { animation-duration: 200ms; animation-timing-function: ease-out; animation-fill-mode: both; }
+.animate-out { animation-duration: 150ms; animation-timing-function: ease-in; animation-fill-mode: both; }
+.fade-in-0 { animation-name: fadeIn; }
+.fade-out-80 { animation-name: fadeOut80; }
+.zoom-in-95 { animation-name: zoomIn; }
+.zoom-out-95 { animation-name: zoomOut; }
+.slide-in-from-top-full { animation-name: slideInFromTop; }
+.slide-in-from-left-1\/2 { animation-name: slideInFromLeft; }
+.slide-in-from-top-\[48\%\] { animation-name: slideInFromTop48; }
+.slide-out-to-right-full { animation-name: slideOutToRight; }
+.slide-out-to-left-1\/2 { animation-name: slideOutToLeft; }
+.slide-out-to-top-\[48\%\] { animation-name: slideOutToTop; }
+
+@keyframes fadeIn { from { opacity:0; } to { opacity:1; } }
+@keyframes fadeOut80 { from { opacity:1; } to { opacity:0.2; } }
+@keyframes zoomIn { from { transform:scale(0.95); opacity:0; } to { transform:scale(1); opacity:1; } }
+@keyframes zoomOut { from { transform:scale(1); opacity:1; } to { transform:scale(0.95); opacity:0; } }
+@keyframes slideInFromTop { from { transform:translateY(-100%); } to { transform:translateY(0); } }
+@keyframes slideOutToRight { from { transform:translateX(0); } to { transform:translateX(100%); } }
+@keyframes slideInFromLeft { from { transform:translateX(-50%) translateY(-50%); } to { transform:translateX(-50%) translateY(-50%); } }
+@keyframes slideOutToLeft { from { transform:translateX(-50%) translateY(-50%); } to { transform:translateX(-52%) translateY(-50%); } }
+@keyframes slideInFromTop48 { from { transform:translateX(-50%) translateY(-52%); opacity:0; } to { transform:translateX(-50%) translateY(-50%); opacity:1; } }
+@keyframes slideOutToTop { from { transform:translateX(-50%) translateY(-50%); opacity:1; } to { transform:translateX(-50%) translateY(-52%); opacity:0; } }
