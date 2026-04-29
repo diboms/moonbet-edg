@@ -2,11 +2,10 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Home, Zap, PlusCircle, Trophy, UserCircle, Moon } from "lucide-react";
-import { cn, formatMoons, getInitials } from "@/lib/utils";
+import { Home, Zap, PlusCircle, Trophy, UserCircle } from "lucide-react";
+import { cn, getInitials } from "@/lib/utils";
 import { useStore } from "@/lib/store";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { VincentCaricature } from "@/components/ui/vincent-caricature";
 
 const NAV_ITEMS = [
   { href: "/dashboard", icon: Home, label: "Home" },
@@ -20,7 +19,6 @@ export function BottomNav() {
   const { currentUser } = useStore();
 
   return (
-    <>
     <nav className="fixed bottom-0 left-0 right-0 z-50 md:hidden pb-safe">
       <div className="h-px bg-edg-gradient" />
       <div className="flex items-center justify-around bg-dark-900/95 backdrop-blur-md px-1 py-2">
