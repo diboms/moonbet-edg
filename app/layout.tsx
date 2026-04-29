@@ -2,6 +2,7 @@ import type { Metadata, Viewport } from "next";
 import "./globals.css";
 import { Navbar } from "@/components/layout/navbar";
 import { BottomNav } from "@/components/layout/bottom-nav";
+import { MobileHeader } from "@/components/layout/mobile-header";
 import { Toaster } from "@/components/ui/toast";
 import { HydrationProvider } from "@/components/hydration-provider";
 
@@ -29,6 +30,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       <body className="min-h-screen bg-dark-900 text-zinc-100 antialiased" suppressHydrationWarning>
         <HydrationProvider>
           <Navbar />
+          <MobileHeader />
           <main className="min-h-screen pb-20 md:pb-0">
             {children}
           </main>
