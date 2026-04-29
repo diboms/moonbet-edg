@@ -59,7 +59,12 @@ export default function HistoryPage() {
       const roi = totalBet > 0 ? ((totalWon - totalBet) / totalBet) * 100 : 0;
       return { user: u, totalBet, totalWon, wins, losses, bets: resolvedBets.length, roi, pts: totalWon };
     })
-    .sort((a, b) => b.pts - a.pts);
+    .sort((a, b) => {
+      if (b.pts !== a.pts) return b.pts - a.pts;
+      const nameA = `${a.user.firstName} ${a.user.lastName}`.toLowerCase();
+      const nameB = `${b.user.firstName} ${b.user.lastName}`.toLowerCase();
+      return nameA.localeCompare(nameB);
+    });
 
   /* ── Classement constructeurs ── */
   const companyMap = new Map<string, { totalWon: number; totalBet: number; wins: number; bets: number; members: number }>();
@@ -76,7 +81,10 @@ export default function HistoryPage() {
   }
   const constructeurs = Array.from(companyMap.entries())
     .map(([company, stats]) => ({ company, ...stats, roi: stats.totalBet > 0 ? ((stats.totalWon - stats.totalBet) / stats.totalBet) * 100 : 0 }))
-    .sort((a, b) => b.totalWon - a.totalWon);
+    .sort((a, b) => {
+      if (b.totalWon !== a.totalWon) return b.totalWon - a.totalWon;
+      return a.company.localeCompare(b.company);
+    });
 
   const allCompanies = constructeurs.map((c) => c.company);
 
