@@ -25,6 +25,8 @@ export type Company =
   | "COVER"
   | "LesBigBoss"
   | "Digitalinkers"
+  | "JVWEB"
+  | "Ocere"
   | "Autre";
 
 export const COMPANIES: Company[] = [
@@ -54,6 +56,8 @@ export const COMPANIES: Company[] = [
   "COVER",
   "LesBigBoss",
   "Digitalinkers",
+  "JVWEB",
+  "Ocere",
   "Autre",
 ];
 
