@@ -285,20 +285,28 @@ export const useStore = create<AppState>()((set, get) => ({
     }
 
     // ── Mise à jour ELO si match Padel ──
+    // Les invités (ID préfixé "guest:") ne sont pas mis à jour en BDD mais comptent pour le calcul d'équipe (rating = 1000)
+    const isGuest = (id: string) => id.startsWith("guest:");
     const newRatings = new Map<string, number>();
     if (event.isPadelMatch) {
       const winners = winnerOption.playerIds ?? [];
       const losers = event.options.flatMap((o) => o.id !== winnerOptionId ? (o.playerIds ?? []) : []);
       if (winners.length > 0 && losers.length > 0) {
-        const winnerRatings = winners.map((id) => state.users.find((u) => u.id === id)?.padelRating ?? 1000);
-        const loserRatings = losers.map((id) => state.users.find((u) => u.id === id)?.padelRating ?? 1000);
+        const winnerRatings = winners.map((id) =>
+          isGuest(id) ? 1000 : (state.users.find((u) => u.id === id)?.padelRating ?? 1000)
+        );
+        const loserRatings = losers.map((id) =>
+          isGuest(id) ? 1000 : (state.users.find((u) => u.id === id)?.padelRating ?? 1000)
+        );
         const result = updateElo(winnerRatings, loserRatings, true);
 
         winners.forEach((id, i) => {
+          if (isGuest(id)) return; // skip les invités
           newRatings.set(id, result.team1[i]);
           supabase.from("users").update({ padel_rating: result.team1[i] }).eq("id", id).then(() => {});
         });
         losers.forEach((id, i) => {
+          if (isGuest(id)) return;
           newRatings.set(id, result.team2[i]);
           supabase.from("users").update({ padel_rating: result.team2[i] }).eq("id", id).then(() => {});
         });

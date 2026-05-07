@@ -1,10 +1,15 @@
 "use client";
 
 import { useState, useRef, useEffect } from "react";
-import { Search, ChevronDown, Check, User as UserIcon, X } from "lucide-react";
+import { Search, ChevronDown, Check, User as UserIcon, X, UserPlus } from "lucide-react";
 import { User } from "@/lib/types";
 import { cn, getInitials } from "@/lib/utils";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+
+// Format des IDs invités : "guest:Nom Prénom"
+export const GUEST_PREFIX = "guest:";
+export const isGuestId = (id: string) => id.startsWith(GUEST_PREFIX);
+export const guestName = (id: string) => id.slice(GUEST_PREFIX.length);
 
 interface PlayerSelectProps {
   users: User[];
@@ -56,7 +61,28 @@ export function PlayerSelect({
     }
   };
 
-  const selectedUsers = selectedIds.map((id) => users.find((u) => u.id === id)).filter(Boolean) as User[];
+  const addGuest = () => {
+    const trimmed = search.trim();
+    if (!trimmed) return;
+    const guestId = `${GUEST_PREFIX}${trimmed}`;
+    if (selectedIds.includes(guestId)) return;
+    if (selectedIds.length >= maxPlayers) return;
+    onChange([...selectedIds, guestId]);
+    setSearch("");
+  };
+
+  // Affichage des joueurs sélectionnés (mix users et guests)
+  const selectedDisplay = selectedIds.map((id) => {
+    if (isGuestId(id)) {
+      return { id, isGuest: true, name: guestName(id), user: null };
+    }
+    const user = users.find((u) => u.id === id);
+    return { id, isGuest: false, name: user ? `${user.firstName} ${user.lastName[0]}.` : "?", user };
+  });
+
+  // Vérifier si le terme cherché correspond à un joueur existant
+  const exactMatch = filtered.some((u) => `${u.firstName} ${u.lastName}`.toLowerCase() === search.toLowerCase());
+  const showGuestOption = search.trim().length > 1 && !exactMatch && selectedIds.length < maxPlayers;
 
   return (
     <div ref={containerRef} className="relative">
@@ -70,26 +96,35 @@ export function PlayerSelect({
       >
         <UserIcon className="h-4 w-4 text-zinc-600 shrink-0" />
         <div className="flex-1 flex items-center gap-1.5 flex-wrap text-left">
-          {selectedUsers.length === 0 ? (
+          {selectedDisplay.length === 0 ? (
             <span className="text-zinc-600">{placeholder}</span>
           ) : (
-            selectedUsers.map((u) => (
+            selectedDisplay.map((p) => (
               <span
-                key={u.id}
-                className="inline-flex items-center gap-1 rounded-full bg-edg-500/15 border border-edg-500/30 px-2 py-0.5 text-xs font-bold text-edg-300"
+                key={p.id}
+                className={cn(
+                  "inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-xs font-bold",
+                  p.isGuest
+                    ? "bg-amber-500/15 border border-amber-500/30 text-amber-300"
+                    : "bg-edg-500/15 border border-edg-500/30 text-edg-300"
+                )}
               >
-                <Avatar className="h-4 w-4 border border-edg-500/30">
-                  <AvatarImage src={u.avatar} />
-                  <AvatarFallback className="text-[7px] bg-edg-gradient text-white">
-                    {getInitials(u.firstName, u.lastName)}
-                  </AvatarFallback>
-                </Avatar>
-                {u.firstName} {u.lastName[0]}.
+                {p.isGuest ? (
+                  <UserPlus className="h-3 w-3" />
+                ) : p.user ? (
+                  <Avatar className="h-4 w-4 border border-edg-500/30">
+                    <AvatarImage src={p.user.avatar} />
+                    <AvatarFallback className="text-[7px] bg-edg-gradient text-white">
+                      {getInitials(p.user.firstName, p.user.lastName)}
+                    </AvatarFallback>
+                  </Avatar>
+                ) : null}
+                {p.name}
                 <X
                   className="h-3 w-3 hover:text-red-400 cursor-pointer"
                   onClick={(e) => {
                     e.stopPropagation();
-                    toggleUser(u.id);
+                    onChange(selectedIds.filter((id) => id !== p.id));
                   }}
                 />
               </span>
@@ -107,15 +142,34 @@ export function PlayerSelect({
               ref={inputRef}
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              placeholder="Rechercher un joueur…"
+              onKeyDown={(e) => {
+                if (e.key === "Enter" && showGuestOption) {
+                  e.preventDefault();
+                  addGuest();
+                }
+              }}
+              placeholder="Rechercher ou ajouter un joueur…"
               className="flex-1 bg-transparent text-sm text-zinc-200 placeholder-zinc-600 outline-none"
             />
           </div>
 
+          {showGuestOption && (
+            <button
+              type="button"
+              onClick={addGuest}
+              className="flex w-full items-center gap-2 px-3 py-2.5 text-sm bg-amber-500/10 hover:bg-amber-500/20 text-amber-300 transition-colors text-left border-b border-dark-600"
+            >
+              <UserPlus className="h-3.5 w-3.5 shrink-0" />
+              <span className="truncate">
+                Ajouter "<strong>{search.trim()}</strong>" comme invité
+              </span>
+            </button>
+          )}
+
           <div className="max-h-60 overflow-y-auto">
-            {filtered.length === 0 ? (
-              <p className="py-6 text-center text-xs text-zinc-600">Aucun joueur</p>
-            ) : (
+            {filtered.length === 0 && !showGuestOption ? (
+              <p className="py-6 text-center text-xs text-zinc-600">Aucun joueur — tape un nom pour l'ajouter en invité</p>
+            ) : filtered.length === 0 ? null : (
               filtered.map((u) => {
                 const isSelected = selectedIds.includes(u.id);
                 const disabled = !isSelected && selectedIds.length >= maxPlayers;

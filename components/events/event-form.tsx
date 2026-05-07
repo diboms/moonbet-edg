@@ -11,7 +11,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { PlayerSelect } from "@/components/ui/player-select";
+import { PlayerSelect, isGuestId, guestName } from "@/components/ui/player-select";
 import { cn, suggestCotes } from "@/lib/utils";
 
 const CATEGORY_OPTIONS: { value: EventCategory; label: string }[] = [
@@ -41,11 +41,16 @@ export function EventForm() {
   const [resultSource, setResultSource] = useState("");
   const [loading, setLoading] = useState(false);
 
-  // Cotes suggérées en fonction des joueurs
+  // Cotes suggérées en fonction des joueurs (invités → rating 1000 par défaut)
+  const ratingOf = (id: string) => {
+    if (isGuestId(id)) return 1000;
+    return users.find((u) => u.id === id)?.padelRating ?? 1000;
+  };
+
   const suggestedCotes = useMemo(() => {
     if (!isPadelMatch || team1Players.length === 0 || team2Players.length === 0) return null;
-    const r1 = team1Players.map((id) => users.find((u) => u.id === id)?.padelRating ?? 1000);
-    const r2 = team2Players.map((id) => users.find((u) => u.id === id)?.padelRating ?? 1000);
+    const r1 = team1Players.map(ratingOf);
+    const r2 = team2Players.map(ratingOf);
     const avg1 = r1.reduce((s, r) => s + r, 0) / r1.length;
     const avg2 = r2.reduce((s, r) => s + r, 0) / r2.length;
     return suggestCotes(avg1, avg2);
@@ -60,9 +65,10 @@ export function EventForm() {
     ];
   }, [suggestedCotes, coteAdjustments]);
 
-  // Auto-fill labels for padel teams
+  // Auto-fill labels for padel teams (gère aussi les invités)
   const computedTeamLabel = (players: string[]) =>
     players.map((id) => {
+      if (isGuestId(id)) return guestName(id);
       const u = users.find((u) => u.id === id);
       return u ? `${u.firstName} ${u.lastName[0]}.` : "?";
     }).join(" / ");
