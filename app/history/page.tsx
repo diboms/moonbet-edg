@@ -57,7 +57,7 @@ export default function HistoryPage() {
       const wins = resolvedBets.filter((b) => (b.payout ?? 0) > 0).length;
       const losses = resolvedBets.filter((b) => (b.payout ?? 0) === 0 && b.payout !== undefined).length;
       const roi = totalBet > 0 ? ((totalWon - totalBet) / totalBet) * 100 : 0;
-      return { user: u, totalBet, totalWon, wins, losses, bets: resolvedBets.length, roi, pts: totalWon };
+      return { user: u, totalBet, totalWon, wins, losses, bets: resolvedBets.length, roi, pts: u.balance };
     })
     .sort((a, b) => {
       if (b.pts !== a.pts) return b.pts - a.pts;
@@ -67,22 +67,23 @@ export default function HistoryPage() {
     });
 
   /* ── Classement constructeurs ── */
-  const companyMap = new Map<string, { totalWon: number; totalBet: number; wins: number; bets: number; members: number }>();
+  const companyMap = new Map<string, { totalWon: number; totalBet: number; wins: number; bets: number; members: number; totalBalance: number }>();
   for (const entry of pilotes) {
     const c = entry.user.company;
-    const prev = companyMap.get(c) ?? { totalWon: 0, totalBet: 0, wins: 0, bets: 0, members: 0 };
+    const prev = companyMap.get(c) ?? { totalWon: 0, totalBet: 0, wins: 0, bets: 0, members: 0, totalBalance: 0 };
     companyMap.set(c, {
       totalWon: prev.totalWon + entry.totalWon,
       totalBet: prev.totalBet + entry.totalBet,
       wins: prev.wins + entry.wins,
       bets: prev.bets + entry.bets,
       members: prev.members + 1,
+      totalBalance: prev.totalBalance + entry.user.balance,
     });
   }
   const constructeurs = Array.from(companyMap.entries())
     .map(([company, stats]) => ({ company, ...stats, roi: stats.totalBet > 0 ? ((stats.totalWon - stats.totalBet) / stats.totalBet) * 100 : 0 }))
     .sort((a, b) => {
-      if (b.totalWon !== a.totalWon) return b.totalWon - a.totalWon;
+      if (b.totalBalance !== a.totalBalance) return b.totalBalance - a.totalBalance;
       return a.company.localeCompare(b.company);
     });
 
@@ -141,7 +142,7 @@ export default function HistoryPage() {
                       <p className="text-xs font-black text-zinc-200 leading-tight">{entry.user.firstName}</p>
                       <p className="text-[10px] text-zinc-500 truncate max-w-[80px]">{entry.user.company}</p>
                       <p className={cn("text-xs font-black mt-0.5", pos === 0 ? "text-moon-400" : "text-zinc-400")}>
-                        🌙 {formatMoons(entry.totalWon)}
+                        🌙 {formatMoons(entry.pts)}
                       </p>
                     </div>
                     {/* Podium block */}
@@ -214,7 +215,7 @@ export default function HistoryPage() {
 
                     {/* Points */}
                     <div className="text-right">
-                      <span className="text-sm font-black text-moon-400">{formatMoons(entry.totalWon)}</span>
+                      <span className="text-sm font-black text-moon-400">{formatMoons(entry.pts)}</span>
                     </div>
                   </div>
                 );
@@ -238,7 +239,7 @@ export default function HistoryPage() {
             <div className="space-y-2">
               {constructeurs.slice(0, 3).map((entry, i) => {
                 const color = COMPANY_COLORS[allCompanies.indexOf(entry.company) % COMPANY_COLORS.length];
-                const pct = constructeurs[0].totalWon > 0 ? (entry.totalWon / constructeurs[0].totalWon) * 100 : 0;
+                const pct = constructeurs[0].totalBalance > 0 ? (entry.totalBalance / constructeurs[0].totalBalance) * 100 : 0;
                 return (
                   <div key={entry.company} className="rounded-2xl border border-dark-600 bg-dark-800 overflow-hidden relative">
                     {i === 0 && <div className="absolute top-0 left-0 right-0 h-px bg-moon-gradient" />}
@@ -260,7 +261,7 @@ export default function HistoryPage() {
                         </div>
                       </div>
                       <div className="text-right shrink-0">
-                        <p className="text-base font-black text-moon-400">🌙 {formatMoons(entry.totalWon)}</p>
+                        <p className="text-base font-black text-moon-400">🌙 {formatMoons(entry.totalBalance)}</p>
                         <p className={cn("text-[10px] font-bold", entry.roi >= 0 ? "text-emerald-400" : "text-red-400")}>
                           {entry.roi >= 0 ? "+" : ""}{entry.roi.toFixed(0)}% ROI
                         </p>
@@ -320,7 +321,7 @@ export default function HistoryPage() {
                     </div>
 
                     <div className="text-right">
-                      <span className="text-sm font-black text-moon-400">{formatMoons(entry.totalWon)}</span>
+                      <span className="text-sm font-black text-moon-400">{formatMoons(entry.totalBalance)}</span>
                     </div>
                   </div>
                 );
