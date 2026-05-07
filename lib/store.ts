@@ -255,17 +255,29 @@ export const useStore = create<AppState>()((set, get) => ({
       await supabase.from("bets").update({ payout }).eq("id", id);
     }
 
+    // ⚠️ On lit la balance fraîche depuis Supabase pour éviter les états périmés
+    // (le créateur peut avoir une vue locale obsolète des soldes des parieurs)
+    const freshBalances = new Map<string, number>();
+    for (const [userId] of payoutsByUser) {
+      const { data: row } = await supabase.from("users").select("balance").eq("id", userId).single();
+      if (row) freshBalances.set(userId, row.balance);
+    }
+
     for (const [userId, payout] of payoutsByUser) {
-      const user = state.users.find((u) => u.id === userId);
-      if (user) {
-        await supabase.from("users").update({ balance: Math.round(user.balance + payout) }).eq("id", userId);
+      const freshBalance = freshBalances.get(userId);
+      if (freshBalance !== undefined) {
+        await supabase.from("users").update({ balance: Math.round(freshBalance + payout) }).eq("id", userId);
       }
     }
 
-    // Mise à jour locale
+    // Mise à jour locale (on utilise les balances fraîches lues depuis Supabase)
     const updatedUsers = state.users.map((u) => {
       const payout = payoutsByUser.get(u.id);
-      return payout ? { ...u, balance: Math.round(u.balance + payout) } : u;
+      const freshBalance = freshBalances.get(u.id);
+      if (payout && freshBalance !== undefined) {
+        return { ...u, balance: Math.round(freshBalance + payout) };
+      }
+      return u;
     });
     const updatedCurrentUser = state.currentUser
       ? updatedUsers.find((u) => u.id === state.currentUser!.id) ?? state.currentUser
