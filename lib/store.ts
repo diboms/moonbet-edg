@@ -3,7 +3,7 @@
 import { create } from "zustand";
 import { supabase } from "./supabase";
 import { Bet, BetEvent, Comment, User } from "./types";
-import { calculatePayout } from "./utils";
+import { calculatePayout, updateElo } from "./utils";
 
 // ── Mappers Supabase (snake_case) → TypeScript (camelCase) ──
 
@@ -19,6 +19,7 @@ function mapUser(row: any): User {
     linkedin: row.linkedin,
     balance: row.balance,
     createdAt: row.created_at,
+    padelRating: row.padel_rating ?? 1000,
   };
 }
 
@@ -38,10 +39,13 @@ function mapEvent(row: any): BetEvent {
     resultPhoto: row.result_photo,
     totalPot: row.total_pot,
     createdAt: row.created_at,
+    isPadelMatch: row.is_padel_match ?? false,
     options: (row.event_options ?? []).map((o: any) => ({
       id: o.id,
       label: o.label,
       totalBets: o.total_bets,
+      cote: o.cote ?? 2,
+      playerIds: o.player_ids ?? undefined,
     })),
   };
 }
@@ -146,6 +150,7 @@ export const useStore = create<AppState>()((set, get) => ({
       avatar: data.avatar || `https://api.dicebear.com/9.x/avataaars/svg?seed=${data.firstName}&backgroundColor=b6e3f4`,
       linkedin: data.linkedin ?? "",
       balance: 500,
+      padel_rating: 1000,
     };
 
     const { data: created, error } = await supabase.from("users").insert(newRow).select().single();
@@ -199,6 +204,7 @@ export const useStore = create<AppState>()((set, get) => ({
       total_pot: 0,
       scheduled_result_option_id: data.scheduledResultOptionId ?? null,
       result_source: data.resultSource ?? null,
+      is_padel_match: data.isPadelMatch ?? false,
     };
 
     const { data: created, error } = await supabase.from("events").insert(eventRow).select().single();
@@ -210,10 +216,15 @@ export const useStore = create<AppState>()((set, get) => ({
         event_id: eventId,
         label: opt.label,
         total_bets: 0,
+        cote: opt.cote ?? 2,
+        player_ids: opt.playerIds ?? null,
       }))
     );
 
-    const newEvent: BetEvent = { ...mapEvent(created), options: data.options.map((o) => ({ ...o, totalBets: 0 })) };
+    const newEvent: BetEvent = {
+      ...mapEvent(created),
+      options: data.options.map((o) => ({ ...o, totalBets: 0, cote: o.cote ?? 2 })),
+    };
     set((s) => ({ events: [newEvent, ...s.events] }));
     return newEvent;
   },
@@ -226,12 +237,15 @@ export const useStore = create<AppState>()((set, get) => ({
     const winnerOption = event.options.find((o) => o.id === winnerOptionId);
     if (!winnerOption) return;
 
+    // Cote utilisée pour le payout (default 2.0 si pas de cote définie)
+    const winnerCote = winnerOption.cote ?? 2;
+
     // Calcule les gains
     const eventBets = state.bets.filter((b) => b.eventId === eventId);
     const payoutsByBet: { id: string; payout: number }[] = eventBets.map((bet) => ({
       id: bet.id,
       payout: bet.optionId === winnerOptionId
-        ? calculatePayout(bet.amount, winnerOption.totalBets, event.totalPot)
+        ? calculatePayout(bet.amount, winnerOption.totalBets, event.totalPot, winnerCote)
         : 0,
     }));
 
@@ -239,7 +253,7 @@ export const useStore = create<AppState>()((set, get) => ({
     const payoutsByUser = new Map<string, number>();
     for (const bet of eventBets) {
       if (bet.optionId === winnerOptionId) {
-        const payout = calculatePayout(bet.amount, winnerOption.totalBets, event.totalPot);
+        const payout = calculatePayout(bet.amount, winnerOption.totalBets, event.totalPot, winnerCote);
         payoutsByUser.set(bet.userId, (payoutsByUser.get(bet.userId) ?? 0) + payout);
       }
     }
@@ -270,14 +284,40 @@ export const useStore = create<AppState>()((set, get) => ({
       }
     }
 
+    // ── Mise à jour ELO si match Padel ──
+    const newRatings = new Map<string, number>();
+    if (event.isPadelMatch) {
+      const winners = winnerOption.playerIds ?? [];
+      const losers = event.options.flatMap((o) => o.id !== winnerOptionId ? (o.playerIds ?? []) : []);
+      if (winners.length > 0 && losers.length > 0) {
+        const winnerRatings = winners.map((id) => state.users.find((u) => u.id === id)?.padelRating ?? 1000);
+        const loserRatings = losers.map((id) => state.users.find((u) => u.id === id)?.padelRating ?? 1000);
+        const result = updateElo(winnerRatings, loserRatings, true);
+
+        winners.forEach((id, i) => {
+          newRatings.set(id, result.team1[i]);
+          supabase.from("users").update({ padel_rating: result.team1[i] }).eq("id", id).then(() => {});
+        });
+        losers.forEach((id, i) => {
+          newRatings.set(id, result.team2[i]);
+          supabase.from("users").update({ padel_rating: result.team2[i] }).eq("id", id).then(() => {});
+        });
+      }
+    }
+
     // Mise à jour locale (on utilise les balances fraîches lues depuis Supabase)
     const updatedUsers = state.users.map((u) => {
       const payout = payoutsByUser.get(u.id);
       const freshBalance = freshBalances.get(u.id);
+      const newRating = newRatings.get(u.id);
+      let updated = u;
       if (payout && freshBalance !== undefined) {
-        return { ...u, balance: Math.round(freshBalance + payout) };
+        updated = { ...updated, balance: Math.round(freshBalance + payout) };
       }
-      return u;
+      if (newRating !== undefined) {
+        updated = { ...updated, padelRating: newRating };
+      }
+      return updated;
     });
     const updatedCurrentUser = state.currentUser
       ? updatedUsers.find((u) => u.id === state.currentUser!.id) ?? state.currentUser

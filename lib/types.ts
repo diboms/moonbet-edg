@@ -81,6 +81,8 @@ export interface EventOption {
   id: string;
   label: string;
   totalBets: number;
+  cote?: number;          // cote multiplicateur (ex: 2.0 = mise x2). Default 2 si absent.
+  playerIds?: string[];   // joueurs de l'équipe (pour les matchs padel)
 }
 
 export interface User {
@@ -94,6 +96,7 @@ export interface User {
   linkedin?: string;
   balance: number;
   createdAt: string;
+  padelRating?: number;   // Rating ELO-like caché. Default 1000 pour nouveaux joueurs.
 }
 
 export interface BetEvent {
@@ -112,6 +115,7 @@ export interface BetEvent {
   resultPhoto?: string;
   totalPot: number;
   createdAt: string;
+  isPadelMatch?: boolean;   // Si vrai, les ratings ELO sont mis à jour à la résolution
 }
 
 export interface Comment {

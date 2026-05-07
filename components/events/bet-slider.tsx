@@ -36,7 +36,8 @@ export function BetSlider({ event, existingBet, onSuccess }: BetSliderProps) {
   const maxBet = Math.min(availableBalance, 1000);
   const minBet = 10;
 
-  const estimatedPayout = selectedOption ? amount * 2 : 0;
+  const selectedCote = selectedOption?.cote ?? 2;
+  const estimatedPayout = selectedOption ? amount * selectedCote : 0;
 
   const hasChanged = isEditing &&
     (selectedOption?.id !== existingBet?.optionId || amount !== existingBet?.amount);
@@ -103,7 +104,7 @@ export function BetSlider({ event, existingBet, onSuccess }: BetSliderProps) {
                       ? "bg-edg-500/20 text-edg-300 border-edg-500/30"
                       : "bg-dark-600 text-zinc-500 border-dark-500"
                   )}>
-                    x2
+                    x{(opt.cote ?? 2).toFixed(2)}
                   </span>
                 </div>
                 <div className="flex items-center gap-2">
